@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monitor de Pressão Arterial</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111623;
+    --surface2: #161c2e;
+    --border: #1e2840;
+    --accent: #3b82f6;
+    --accent2: #06b6d4;
+    --warn: #f59e0b;
+    --danger: #ef4444;
+    --ok: #10b981;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --mono: 'DM Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    padding: 0;
+    overflow-x: hidden;
+  }
+
+  /* HEADER */
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 20px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .header-icon {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .header h1 {
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--text);
+  }
+  .header-sub {
+    font-size: 11px;
+    color: var(--muted);
+    font-family: var(--mono);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .month-nav {
+    display: flex; align-items: center; gap: 12px;
+  }
+  .month-nav button {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    width: 32px; height: 32px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.15s;
+  }
+  .month-nav button:hover { background: var(--border); }
+  .month-label {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--accent2);
+    min-width: 140px;
+    text-align: center;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  /* MAIN LAYOUT */
+  .main {
+    display: grid;
+    grid-template-columns: 1fr 360px;
+    gap: 0;
+    height: calc(100vh - 77px);
+  }
+
+  /* CALENDAR GRID */
+  .calendar-panel {
+    padding: 24px 32px;
+    overflow-y: auto;
+  }
+  .calendar-header {
+    display: grid;
+    grid-template-columns: 48px repeat(3, 1fr);
+    gap: 2px;
+    margin-bottom: 4px;
+  }
+  .cal-head {
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 8px 4px;
+  }
+  .cal-head.day-col { text-align: left; }
+
+  .calendar-body { display: flex; flex-direction: column; gap: 2px; }
+
+  .cal-row {
+    display: grid;
+    grid-template-columns: 48px repeat(3, 1fr);
+    gap: 2px;
+  }
+  .cal-day-num {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--muted);
+    padding: 6px 0;
+  }
+  .cal-day-num.today {
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  .cal-cell {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+    min-height: 64px;
+    position: relative;
+    overflow: hidden;
+  }
+  .cal-cell:hover { border-color: var(--accent); background: var(--surface2); }
+  .cal-cell.selected { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+  .cal-cell.empty { background: transparent; border-color: transparent; cursor: default; }
+  .cal-cell.empty:hover { background: transparent; border-color: transparent; }
+
+  .cell-period {
+    font-size: 9px;
+    font-family: var(--mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  .cell-reading {
+    font-family: var(--mono);
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.2;
+  }
+  .cell-reading.ok { color: var(--ok); }
+  .cell-reading.warn { color: var(--warn); }
+  .cell-reading.danger { color: var(--danger); }
+  .cell-reading.empty-val { color: var(--border); font-size: 12px; }
+  .cell-pulse {
+    font-size: 10px;
+    color: var(--muted);
+    font-family: var(--mono);
+    margin-top: 2px;
+  }
+  .cell-time {
+    font-size: 9px;
+    color: var(--accent2);
+    font-family: var(--mono);
+    margin-top: 1px;
+    opacity: 0.8;
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .sidebar-section {
+    padding: 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  .section-label {
+    font-size: 10px;
+    font-family: var(--mono);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 16px;
+  }
+
+  /* ENTRY FORM */
+  .form-context {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-bottom: 16px;
+  }
+  .form-context-day {
+    font-family: var(--mono);
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--accent2);
+  }
+  .form-context-info {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  .period-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 4px;
+    margin-bottom: 20px;
+  }
+  .period-tab {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 8px 4px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 11px;
+    font-family: var(--mono);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    transition: all 0.15s;
+    text-align: center;
+  }
+  .period-tab:hover { color: var(--text); border-color: var(--muted); }
+  .period-tab.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+
+  .input-group {
+    margin-bottom: 14px;
+  }
+  .input-label {
+    display: block;
+    font-size: 10px;
+    font-family: var(--mono);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .input-row {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 8px;
+    align-items: center;
+  }
+  .input-sep {
+    font-size: 20px;
+    color: var(--muted);
+    text-align: center;
+    font-weight: 300;
+  }
+  input[type="number"] {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 20px;
+    font-weight: 500;
+    padding: 10px 12px;
+    width: 100%;
+    text-align: center;
+    outline: none;
+    transition: border-color 0.15s;
+    appearance: textfield;
+  }
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
+  input[type="number"]:focus { border-color: var(--accent); }
+  input[type="time"] {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 18px;
+    font-weight: 500;
+    padding: 10px 12px;
+    width: 100%;
+    outline: none;
+    transition: border-color 0.15s;
+    cursor: pointer;
+  }
+  input[type="time"]:focus { border-color: var(--accent); }
+  input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(0.5); cursor: pointer; }
+  input[type="number"].single {
+    max-width: 100%;
+  }
+
+  .btn-save {
+    width: 100%;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 12px;
+    font-family: var(--sans);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-top: 4px;
+    letter-spacing: 0.02em;
+  }
+  .btn-save:hover { background: #2563eb; }
+  .btn-clear {
+    width: 100%;
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px;
+    font-family: var(--sans);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-top: 6px;
+  }
+  .btn-clear:hover { color: var(--danger); border-color: var(--danger); }
+
+  /* STATS */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .stat-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+  }
+  .stat-label {
+    font-size: 9px;
+    font-family: var(--mono);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  .stat-value {
+    font-family: var(--mono);
+    font-size: 18px;
+    font-weight: 500;
+  }
+  .stat-value.ok { color: var(--ok); }
+  .stat-value.warn { color: var(--warn); }
+  .stat-value.danger { color: var(--danger); }
+  .stat-value.neutral { color: var(--text); }
+
+  /* LEGEND */
+  .legend {
+    padding: 16px 24px;
+  }
+  .legend-title {
+    font-size: 10px;
+    font-family: var(--mono);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+  .legend-items { display: flex; flex-direction: column; gap: 6px; }
+  .legend-item {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .legend-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(60px);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-size: 13px;
+    font-family: var(--mono);
+    color: var(--ok);
+    opacity: 0;
+    transition: all 0.3s;
+    pointer-events: none;
+    z-index: 999;
+    white-space: nowrap;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  @media (max-width: 768px) {
+    .main { grid-template-columns: 1fr; height: auto; }
+    .sidebar { border-left: none; border-top: 1px solid var(--border); }
+    .calendar-panel { padding: 16px; }
+    .header { padding: 16px; }
+    .header h1 { font-size: 14px; }
+    .cell-reading { font-size: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-brand">
+    <div class="header-icon">❤️</div>
+    <div>
+      <h1>Monitor de Pressão Arterial</h1>
+      <div class="header-sub">Registro mensal · Manhã · Tarde · Noite</div>
+    </div>
+  </div>
+  <div class="month-nav">
+    <button onclick="changeMonth(-1)">&#8592;</button>
+    <div class="month-label" id="monthLabel"></div>
+    <button onclick="changeMonth(1)">&#8594;</button>
+  </div>
+</div>
+
+<div class="main">
+  <div class="calendar-panel">
+    <div class="calendar-header">
+      <div class="cal-head day-col">Dia</div>
+      <div class="cal-head">Manhã</div>
+      <div class="cal-head">Tarde</div>
+      <div class="cal-head">Noite</div>
+    </div>
+    <div class="calendar-body" id="calendarBody"></div>
+  </div>
+
+  <div class="sidebar">
+    <div class="sidebar-section">
+      <div class="section-label">Registrar Leitura</div>
+
+      <div class="form-context" id="formContext">
+        <div class="form-context-day" id="selectedDateLabel">Selecione um dia</div>
+        <div class="form-context-info" id="selectedPeriodLabel">Clique em uma célula do calendário</div>
+      </div>
+
+      <div class="period-tabs">
+        <div class="period-tab active" id="tab-manha" onclick="selectPeriod('manha')">Manhã</div>
+        <div class="period-tab" id="tab-tarde" onclick="selectPeriod('tarde')">Tarde</div>
+        <div class="period-tab" id="tab-noite" onclick="selectPeriod('noite')">Noite</div>
+      </div>
+
+      <div class="input-group">
+        <label class="input-label">Sistólica / Diastólica (mmHg)</label>
+        <div class="input-row">
+          <input type="number" id="inputSis" placeholder="120" min="60" max="250">
+          <div class="input-sep">/</div>
+          <input type="number" id="inputDia" placeholder="80" min="40" max="150">
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label class="input-label">Pulso (bpm) · opcional</label>
+        <input type="number" id="inputPulse" placeholder="72" min="30" max="220" class="single">
+      </div>
+
+      <div class="input-group">
+        <label class="input-label">Horário da medição · opcional</label>
+        <input type="time" id="inputTime" class="single">
+      </div>
+
+      <button class="btn-save" onclick="saveReading()">Salvar Registro</button>
+      <button class="btn-clear" onclick="clearReading()">Remover Registro</button>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="section-label">Resumo do Mês</div>
+      <div class="stats-grid" id="statsGrid">
+        <div class="stat-card">
+          <div class="stat-label">Registros</div>
+          <div class="stat-value neutral" id="statTotal">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Dias cobertos</div>
+          <div class="stat-value neutral" id="statDays">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Média Sistólica</div>
+          <div class="stat-value neutral" id="statAvgSis">--</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Média Diastólica</div>
+          <div class="stat-value neutral" id="statAvgDia">--</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="legend">
+      <div class="legend-title">Classificação</div>
+      <div class="legend-items">
+        <div class="legend-item"><div class="legend-dot" style="background:#10b981"></div>Normal · até 120/80</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div>Elevada · 120–139/80–89</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div>Alta · 140+/90+</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#64748b"></div>Sem registro</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const PERIODS = ['manha','tarde','noite'];
+  const PERIOD_LABELS = { manha:'Manhã', tarde:'Tarde', noite:'Noite' };
+  const MONTHS_PT = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+  let currentYear, currentMonth, selectedDay = null, selectedPeriod = 'manha';
+  const today = new Date();
+
+  function getKey(year, month) {
+    return `bp_${year}_${month}`;
+  }
+
+  function loadData(year, month) {
+    try { return JSON.parse(localStorage.getItem(getKey(year, month))) || {}; }
+    catch { return {}; }
+  }
+
+  function saveData(year, month, data) {
+    localStorage.setItem(getKey(year, month), JSON.stringify(data));
+  }
+
+  function classify(sis, dia) {
+    if (!sis || !dia) return 'empty-val';
+    if (sis >= 140 || dia >= 90) return 'danger';
+    if (sis >= 120 || dia >= 80) return 'warn';
+    return 'ok';
+  }
+
+  function renderCalendar() {
+    document.getElementById('monthLabel').textContent = `${MONTHS_PT[currentMonth]} ${currentYear}`;
+    const data = loadData(currentYear, currentMonth);
+    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+    const body = document.getElementById('calendarBody');
+    body.innerHTML = '';
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const row = document.createElement('div');
+      row.className = 'cal-row';
+
+      const dayNum = document.createElement('div');
+      dayNum.className = 'cal-day-num' + (d === today.getDate() && currentMonth === today.getMonth() && currentYear === today.getFullYear() ? ' today' : '');
+      dayNum.textContent = String(d).padStart(2,'0');
+      row.appendChild(dayNum);
+
+      PERIODS.forEach(period => {
+        const cell = document.createElement('div');
+        cell.className = 'cal-cell' + (selectedDay === d && selectedPeriod === period ? ' selected' : '');
+        cell.onclick = () => { selectCell(d, period); };
+
+        const periodDiv = document.createElement('div');
+        periodDiv.className = 'cell-period';
+        periodDiv.textContent = PERIOD_LABELS[period];
+
+        const reading = data[d] && data[d][period];
+        const valDiv = document.createElement('div');
+
+        if (reading && reading.sis && reading.dia) {
+          const cls = classify(reading.sis, reading.dia);
+          valDiv.className = 'cell-reading ' + cls;
+          valDiv.textContent = `${reading.sis}/${reading.dia}`;
+          cell.appendChild(periodDiv);
+          cell.appendChild(valDiv);
+          if (reading.pulse) {
+            const pulse = document.createElement('div');
+            pulse.className = 'cell-pulse';
+            pulse.textContent = `♥ ${reading.pulse}`;
+            cell.appendChild(pulse);
+          }
+          if (reading.time) {
+            const timeDiv = document.createElement('div');
+            timeDiv.className = 'cell-time';
+            timeDiv.textContent = `⏱ ${reading.time}`;
+            cell.appendChild(timeDiv);
+          }
+        } else {
+          valDiv.className = 'cell-reading empty-val';
+          valDiv.textContent = '--/--';
+          cell.appendChild(periodDiv);
+          cell.appendChild(valDiv);
+        }
+        row.appendChild(cell);
+      });
+
+      body.appendChild(row);
+    }
+
+    updateStats();
+  }
+
+  function selectCell(day, period) {
+    selectedDay = day;
+    selectedPeriod = period;
+
+    document.querySelectorAll('.period-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('tab-' + period).classList.add('active');
+
+    const data = loadData(currentYear, currentMonth);
+    const reading = data[day] && data[day][period];
+
+    document.getElementById('inputSis').value = reading ? reading.sis : '';
+    document.getElementById('inputDia').value = reading ? reading.dia : '';
+    document.getElementById('inputPulse').value = reading && reading.pulse ? reading.pulse : '';
+    const nowTime = new Date().toTimeString().slice(0, 5);
+    document.getElementById('inputTime').value = reading && reading.time ? reading.time : nowTime;
+
+    const dayNames = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+    const dt = new Date(currentYear, currentMonth, day);
+    document.getElementById('selectedDateLabel').textContent = `${String(day).padStart(2,'0')} ${MONTHS_PT[currentMonth]} ${currentYear}`;
+    document.getElementById('selectedPeriodLabel').textContent = `${dayNames[dt.getDay()]} · ${PERIOD_LABELS[period]}`;
+
+    renderCalendar();
+  }
+
+  function selectPeriod(period) {
+    selectedPeriod = period;
+    document.querySelectorAll('.period-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('tab-' + period).classList.add('active');
+    if (selectedDay) selectCell(selectedDay, period);
+  }
+
+  function autoDetectPeriod(hour) {
+    if (hour >= 5 && hour < 12) return 'manha';
+    if (hour >= 12 && hour < 18) return 'tarde';
+    return 'noite';
+  }
+
+  function saveReading() {
+    const now = new Date();
+
+    // Auto-set day to today if none selected
+    if (!selectedDay) {
+      if (currentYear === now.getFullYear() && currentMonth === now.getMonth()) {
+        selectedDay = now.getDate();
+      } else {
+        showToast('Selecione um dia no calendário', '#f59e0b'); return;
+      }
+    }
+
+    // Auto-detect period from current hour
+    const autoPeriod = autoDetectPeriod(now.getHours());
+    selectedPeriod = autoPeriod;
+    document.querySelectorAll('.period-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('tab-' + autoPeriod).classList.add('active');
+
+    // Auto-fill time
+    const autoTime = now.toTimeString().slice(0, 5);
+    document.getElementById('inputTime').value = autoTime;
+
+    const sis = parseInt(document.getElementById('inputSis').value);
+    const dia = parseInt(document.getElementById('inputDia').value);
+    const pulse = parseInt(document.getElementById('inputPulse').value) || null;
+    const time = autoTime;
+
+    if (!sis || !dia || sis < 60 || dia < 40 || sis > 250 || dia > 150) {
+      showToast('Valores fora do intervalo válido', '#ef4444'); return;
+    }
+
+    const data = loadData(currentYear, currentMonth);
+    if (!data[selectedDay]) data[selectedDay] = {};
+    data[selectedDay][selectedPeriod] = { sis, dia, pulse, time };
+    saveData(currentYear, currentMonth, data);
+    renderCalendar();
+    showToast(`Salvo: ${sis}/${dia} mmHg`, '#10b981');
+  }
+
+  function clearReading() {
+    if (!selectedDay) return;
+    const data = loadData(currentYear, currentMonth);
+    if (data[selectedDay]) { delete data[selectedDay][selectedPeriod]; }
+    saveData(currentYear, currentMonth, data);
+    document.getElementById('inputSis').value = '';
+    document.getElementById('inputDia').value = '';
+    document.getElementById('inputPulse').value = '';
+    document.getElementById('inputTime').value = '';
+    renderCalendar();
+  }
+
+  function updateStats() {
+    const data = loadData(currentYear, currentMonth);
+    let total = 0, days = new Set(), sisSum = 0, diaSum = 0;
+
+    Object.keys(data).forEach(day => {
+      let hasSomething = false;
+      PERIODS.forEach(p => {
+        const r = data[day][p];
+        if (r && r.sis && r.dia) {
+          total++;
+          sisSum += r.sis;
+          diaSum += r.dia;
+          hasSomething = true;
+        }
+      });
+      if (hasSomething) days.add(day);
+    });
+
+    document.getElementById('statTotal').textContent = total;
+    document.getElementById('statDays').textContent = days.size;
+    if (total > 0) {
+      const avgSis = Math.round(sisSum / total);
+      const avgDia = Math.round(diaSum / total);
+      const sisCls = classify(avgSis, avgDia);
+      document.getElementById('statAvgSis').textContent = avgSis;
+      document.getElementById('statAvgSis').className = 'stat-value ' + sisCls;
+      document.getElementById('statAvgDia').textContent = avgDia;
+      document.getElementById('statAvgDia').className = 'stat-value ' + sisCls;
+    } else {
+      document.getElementById('statAvgSis').textContent = '--';
+      document.getElementById('statAvgSis').className = 'stat-value neutral';
+      document.getElementById('statAvgDia').textContent = '--';
+      document.getElementById('statAvgDia').className = 'stat-value neutral';
+    }
+  }
+
+  function changeMonth(dir) {
+    currentMonth += dir;
+    if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+    if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+    selectedDay = null;
+    document.getElementById('selectedDateLabel').textContent = 'Selecione um dia';
+    document.getElementById('selectedPeriodLabel').textContent = 'Clique em uma célula do calendário';
+    document.getElementById('inputSis').value = '';
+    document.getElementById('inputDia').value = '';
+    document.getElementById('inputPulse').value = '';
+    document.getElementById('inputTime').value = '';
+    renderCalendar();
+  }
+
+  function showToast(msg, color) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.color = color || '#10b981';
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2200);
+  }
+
+  // INIT
+  currentYear = today.getFullYear();
+  currentMonth = today.getMonth();
+  renderCalendar();
+</script>
+</body>
+</html>
