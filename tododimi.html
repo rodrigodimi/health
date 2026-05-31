@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Agenda</title>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #F4F1EC;
+  --surface: #FFFFFF;
+  --surface2: #EDEAE5;
+  --text: #111110;
+  --muted: #888480;
+  --border: #DEDAD4;
+
+  --trabalho: #0B4279;
+  --trabalho-light: #EAF1F8;
+  --saude: #00A88E;
+  --saude-light: #E5F6F3;
+  --pessoal: #7B5EA7;
+  --pessoal-light: #F2EDF9;
+
+  --urgente: #C61F40;
+  --urgente-light: #FAE9ED;
+  --normal: #C48A00;
+  --normal-light: #FBF4E0;
+  --depois: #888480;
+  --depois-light: #F4F3F1;
+
+  --alert-bg: #FFF7ED;
+  --alert-border: #F59E0B;
+  --alert-text: #92400E;
+  --alert-overdue-bg: #FEF2F2;
+  --alert-overdue-border: #C61F40;
+  --alert-overdue-text: #7F1D1D;
+
+  --r: 10px;
+  --shadow: 0 1px 10px rgba(17,17,16,0.07);
+
+  --fs-xs:  0.66rem;
+  --fs-sm:  0.74rem;
+  --fs-base:0.83rem;
+  --fs-md:  0.9rem;
+  --fs-lg:  1rem;
+}
+
+html { font-size: 16px; }
+
+body {
+  font-family: 'Geist', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/* ── HEADER ─────────────────────────────── */
+header {
+  background: var(--text);
+  padding: 18px 20px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-left h1 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #F4F1EC;
+  letter-spacing: -0.3px;
+  line-height: 1;
+}
+
+.header-left h1 span {
+  color: #E4AB00;
+  font-weight: 300;
+  font-style: italic;
+}
+
+.header-date {
+  font-size: var(--fs-xs);
+  color: #666360;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-top: 3px;
+}
+
+.header-stats {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+}
+
+.stat { text-align: right; }
+
+.stat-number {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #F4F1EC;
+  letter-spacing: -0.5px;
+  line-height: 1;
+}
+
+.stat-label {
+  font-size: 0.58rem;
+  color: #666360;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.stat-div {
+  width: 1px;
+  height: 24px;
+  background: #2A2A28;
+}
+
+/* ── ADD BTN (mobile FAB) ─────────────── */
+.fab {
+  display: none;
+  position: fixed;
+  bottom: 24px;
+  right: 20px;
+  z-index: 200;
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  background: var(--text);
+  color: #F4F1EC;
+  border: none;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 4px 18px rgba(17,17,16,0.22);
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s;
+}
+
+.fab:active { transform: scale(0.93); }
+
+/* ── MOBILE DRAWER ────────────────────── */
+.drawer-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(17,17,16,0.45);
+  z-index: 150;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.drawer-overlay.open { opacity: 1; }
+
+.drawer {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: var(--surface);
+  border-radius: 16px 16px 0 0;
+  padding: 0 18px 28px;
+  z-index: 160;
+  transform: translateY(100%);
+  transition: transform 0.28s cubic-bezier(.32,.72,0,1);
+  max-height: 92dvh;
+  overflow-y: auto;
+}
+
+.drawer.open { transform: translateY(0); }
+
+.drawer-handle {
+  width: 36px; height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  margin: 12px auto 16px;
+}
+
+/* ── MAIN LAYOUT ─────────────────────── */
+.layout {
+  display: grid;
+  grid-template-columns: 284px 1fr;
+  min-height: calc(100vh - 68px);
+  min-height: calc(100dvh - 68px);
+}
+
+/* ── SIDEBAR ─────────────────────────── */
+.sidebar {
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: 20px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow-y: auto;
+}
+
+.section-title {
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  font-weight: 600;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.form-label {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+input[type="text"],
+textarea,
+select {
+  font-family: 'Geist', sans-serif;
+  font-size: var(--fs-sm);
+  border: 1.5px solid var(--border);
+  border-radius: 7px;
+  padding: 8px 10px;
+  background: var(--bg);
+  color: var(--text);
+  outline: none;
+  width: 100%;
+  transition: border-color 0.12s, background 0.12s;
+  -webkit-appearance: none;
+}
+
+input[type="text"]:focus,
+textarea:focus {
+  border-color: var(--text);
+  background: #fff;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 58px;
+}
+
+/* CAT */
+.cat-toggle {
+  display: grid;
+  grid-template-columns: repeat(3,1fr);
+  gap: 5px;
+}
+
+.cat-btn {
+  padding: 7px 4px;
+  border: 1.5px solid var(--border);
+  border-radius: 7px;
+  background: var(--bg);
+  cursor: pointer;
+  font-family: 'Geist', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--muted);
+  transition: all 0.12s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.cat-btn.active[data-cat="trabalho"] { background: var(--trabalho-light); border-color: var(--trabalho); color: var(--trabalho); }
+.cat-btn.active[data-cat="saude"]    { background: var(--saude-light);    border-color: var(--saude);    color: var(--saude);    }
+.cat-btn.active[data-cat="pessoal"]  { background: var(--pessoal-light);  border-color: var(--pessoal);  color: var(--pessoal);  }
+
+.cat-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+[data-cat="trabalho"] .cat-dot { background: var(--trabalho); }
+[data-cat="saude"]    .cat-dot { background: var(--saude);    }
+[data-cat="pessoal"]  .cat-dot { background: var(--pessoal);  }
+
+/* SUBCAT */
+.subcat-wrap {
+  overflow: hidden;
+  max-height: 80px;
+  transition: max-height 0.2s ease, opacity 0.15s;
+  opacity: 1;
+}
+
+.subcat-wrap.hidden {
+  max-height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* PRIO */
+.prio-toggle {
+  display: grid;
+  grid-template-columns: repeat(3,1fr);
+  gap: 5px;
+}
+
+.prio-btn {
+  padding: 7px 4px;
+  border: 1.5px solid var(--border);
+  border-radius: 7px;
+  background: var(--bg);
+  cursor: pointer;
+  font-family: 'Geist', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--muted);
+  transition: all 0.12s;
+  text-align: center;
+}
+
+.prio-btn.active[data-prio="urgente"] { background: var(--urgente-light); border-color: var(--urgente); color: var(--urgente); }
+.prio-btn.active[data-prio="normal"]  { background: var(--normal-light);  border-color: var(--normal);  color: var(--normal);  }
+.prio-btn.active[data-prio="depois"]  { background: var(--depois-light);  border-color: var(--depois);  color: #5A5652;        }
+
+.btn-add {
+  background: var(--text);
+  color: #F4F1EC;
+  border: none;
+  border-radius: 8px;
+  padding: 11px;
+  font-family: 'Geist', sans-serif;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.12s, transform 0.1s;
+  width: 100%;
+  touch-action: manipulation;
+}
+
+.btn-add:hover  { opacity: 0.82; }
+.btn-add:active { transform: scale(0.98); }
+
+.progress-wrap { display: flex; flex-direction: column; gap: 4px; }
+
+.progress-bg {
+  background: var(--surface2);
+  border-radius: 3px;
+  height: 3px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--text);
+  border-radius: 3px;
+  transition: width 0.35s ease;
+}
+
+.progress-label {
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+
+/* ── CONTENT ─────────────────────────── */
+.content {
+  padding: 18px 24px 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+}
+
+.content-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.content-header h2 {
+  font-size: var(--fs-md);
+  font-weight: 600;
+  letter-spacing: -0.1px;
+}
+
+.filters {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.filter-chip {
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-family: 'Geist', sans-serif;
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.12s;
+  white-space: nowrap;
+  touch-action: manipulation;
+}
+
+.filter-chip.active { background: var(--text); border-color: var(--text); color: #F4F1EC; }
+
+/* ── ALERT BANNER ────────────────────── */
+.alert-banner {
+  border-radius: var(--r);
+  padding: 10px 13px;
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  font-size: var(--fs-sm);
+  line-height: 1.45;
+  animation: fadeUp 0.2s ease;
+}
+
+.alert-banner.overdue {
+  background: var(--alert-overdue-bg);
+  border: 1.5px solid var(--alert-overdue-border);
+  color: var(--alert-overdue-text);
+}
+
+.alert-banner.warning {
+  background: var(--alert-bg);
+  border: 1.5px solid var(--alert-border);
+  color: var(--alert-text);
+}
+
+.alert-icon { font-size: 0.9rem; flex-shrink: 0; margin-top: 1px; }
+
+.alert-content { flex: 1; }
+
+.alert-title {
+  font-weight: 600;
+  font-size: var(--fs-sm);
+  display: block;
+  margin-bottom: 2px;
+}
+
+.alert-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.alert-list li {
+  font-size: var(--fs-xs);
+  opacity: 0.9;
+}
+
+/* ── TASK GROUPS ─────────────────────── */
+.task-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.group-label {
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 7px;
+}
+
+.group-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.group-label.urgente { color: var(--urgente); }
+.group-label.normal  { color: var(--normal);  }
+.group-label.depois  { color: var(--depois);  }
+
+/* ── TASK CARD ───────────────────────── */
+.task-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.task-card {
+  background: var(--surface);
+  border-radius: var(--r);
+  border: 1.5px solid var(--border);
+  padding: 10px 12px 10px 15px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  position: relative;
+  overflow: hidden;
+  animation: fadeUp 0.2s ease;
+  transition: border-color 0.12s, box-shadow 0.12s;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(5px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.task-card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+}
+
+.task-card[data-cat="trabalho"]::before { background: var(--trabalho); }
+.task-card[data-cat="saude"]::before    { background: var(--saude);    }
+.task-card[data-cat="pessoal"]::before  { background: var(--pessoal);  }
+
+.task-card:hover { border-color: #C5C1BB; box-shadow: var(--shadow); }
+
+/* overdue ring */
+.task-card.overdue  { border-color: var(--urgente);  border-width: 1.5px; }
+.task-card.warning  { border-color: var(--alert-border); border-width: 1.5px; }
+
+.task-card.done {
+  opacity: 0.4;
+  background: #FAFAF8;
+}
+
+.task-card.done .task-title { text-decoration: line-through; }
+
+/* checkbox */
+.task-check {
+  flex-shrink: 0;
+  width: 18px; height: 18px;
+  border: 1.5px solid var(--border);
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.12s;
+  touch-action: manipulation;
+}
+
+.task-check:hover { border-color: var(--text); }
+
+.task-check.checked {
+  background: var(--text);
+  border-color: var(--text);
+}
+
+.task-check.checked::after {
+  content: '';
+  display: block;
+  width: 4px; height: 7px;
+  border: 1.5px solid #F4F1EC;
+  border-top: none;
+  border-left: none;
+  transform: rotate(45deg) translate(-0.5px,-1px);
+}
+
+.task-body { flex: 1; min-width: 0; }
+
+.task-meta {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 3px;
+  flex-wrap: wrap;
+}
+
+.tag {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.tag.trabalho { background: var(--trabalho-light); color: var(--trabalho); }
+.tag.saude    { background: var(--saude-light);    color: var(--saude);    }
+.tag.pessoal  { background: var(--pessoal-light);  color: var(--pessoal);  }
+.tag.subcat   { background: var(--surface2); color: var(--muted); font-weight: 500; }
+
+/* overdue badge on card */
+.overdue-badge {
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.overdue-badge.red    { background: var(--urgente-light); color: var(--urgente); }
+.overdue-badge.yellow { background: var(--normal-light);  color: var(--normal);  }
+
+.task-title {
+  font-size: var(--fs-base);
+  font-weight: 500;
+  color: var(--text);
+  line-height: 1.4;
+}
+
+.task-desc {
+  font-size: var(--fs-xs);
+  color: var(--muted);
+  margin-top: 3px;
+  line-height: 1.5;
+}
+
+.task-dates {
+  display: flex;
+  gap: 10px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+
+.task-date {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.6rem;
+  color: #AAAAAA;
+}
+
+.task-date.done-date { color: var(--saude); }
+
+.task-date svg { opacity: 0.5; flex-shrink: 0; }
+.task-date.done-date svg { opacity: 0.8; }
+
+.task-delete {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #CECBC6;
+  font-size: 0.78rem;
+  padding: 2px 3px;
+  border-radius: 4px;
+  transition: color 0.12s;
+  line-height: 1;
+  margin-top: 2px;
+  touch-action: manipulation;
+}
+
+.task-delete:hover { color: var(--urgente); }
+
+/* empty */
+.empty-state {
+  text-align: center;
+  padding: 48px 20px;
+  color: var(--muted);
+}
+
+.empty-icon { font-size: 1.6rem; margin-bottom: 8px; opacity: 0.3; }
+.empty-state p { font-size: var(--fs-sm); }
+
+/* ── RESPONSIVE: MOBILE ──────────────── */
+@media (max-width: 680px) {
+  .layout { grid-template-columns: 1fr; }
+
+  .sidebar { display: none; } /* shown as drawer instead */
+
+  .fab { display: flex; }
+
+  .drawer-overlay { display: block; }
+
+  .content { padding: 14px 14px 90px; }
+
+  .content-header { gap: 8px; }
+
+  .filters { gap: 4px; overflow-x: auto; flex-wrap: nowrap; padding-bottom: 2px; }
+  .filters::-webkit-scrollbar { display: none; }
+
+  .task-card { padding: 10px 11px 10px 14px; }
+
+  .task-check { width: 20px; height: 20px; }
+}
+
+@media (min-width: 681px) {
+  .drawer, .drawer-overlay { display: none !important; }
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="header-left">
+    <h1>minha <span>agenda</span></h1>
+    <div class="header-date" id="headerDate"></div>
+  </div>
+  <div class="header-stats">
+    <div class="stat">
+      <div class="stat-number" id="statPending">0</div>
+      <div class="stat-label">pendentes</div>
+    </div>
+    <div class="stat-div"></div>
+    <div class="stat">
+      <div class="stat-number" id="statDone">0</div>
+      <div class="stat-label">concluídas</div>
+    </div>
+  </div>
+</header>
+
+<!-- FAB (mobile only) -->
+<button class="fab" id="fabBtn" aria-label="Nova tarefa">+</button>
+
+<!-- DRAWER OVERLAY (mobile) -->
+<div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+
+<!-- DRAWER (mobile) -->
+<div class="drawer" id="drawer">
+  <div class="drawer-handle"></div>
+  <div id="drawerForm"></div>
+</div>
+
+<!-- MAIN -->
+<div class="layout">
+
+  <!-- SIDEBAR (desktop) -->
+  <aside class="sidebar" id="sidebarForm"></aside>
+
+  <!-- CONTENT -->
+  <main class="content">
+    <div class="content-header">
+      <h2>Tarefas</h2>
+      <div class="filters" id="filters">
+        <button class="filter-chip active" data-filter="all"      onclick="setFilter('all')">Todas</button>
+        <button class="filter-chip"        data-filter="trabalho" onclick="setFilter('trabalho')">Trabalho</button>
+        <button class="filter-chip"        data-filter="saude"    onclick="setFilter('saude')">Saúde</button>
+        <button class="filter-chip"        data-filter="pessoal"  onclick="setFilter('pessoal')">Pessoal</button>
+        <button class="filter-chip"        data-filter="urgente"  onclick="setFilter('urgente')">Urgente</button>
+        <button class="filter-chip"        data-filter="done"     onclick="setFilter('done')">Concluídas</button>
+      </div>
+    </div>
+    <div id="alertContainer"></div>
+    <div id="taskContainer"></div>
+  </main>
+</div>
+
+<script>
+// ── STATE ─────────────────────────────
+let tasks = JSON.parse(localStorage.getItem('agenda_v3') || '[]');
+let selCat  = 'trabalho';
+let selPrio = 'urgente';
+let filter  = 'all';
+
+// Overdue limits (ms)
+const LIMITS = { urgente: 1*24*60*60*1000, normal: 3*24*60*60*1000, depois: 7*24*60*60*1000 };
+// Warning at 75% of the limit
+const WARN_FACTOR = 0.75;
+
+// ── DATE HELPERS ──────────────────────
+const DAYS   = ['domingo','segunda','terça','quarta','quinta','sexta','sábado'];
+const MONTHS = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+const now = new Date();
+document.getElementById('headerDate').textContent =
+  `${DAYS[now.getDay()]}, ${now.getDate()} de ${MONTHS[now.getMonth()]} de ${now.getFullYear()}`;
+
+function fmtDate(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getFullYear()).slice(2)} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+
+function elapsed(iso) {
+  return Date.now() - new Date(iso).getTime();
+}
+
+function overdueStatus(t) {
+  if (t.done) return null;
+  const ms    = elapsed(t.createdAt);
+  const limit = LIMITS[t.prio];
+  if (ms >= limit)              return 'overdue';
+  if (ms >= limit * WARN_FACTOR) return 'warning';
+  return null;
+}
+
+function overdueLabel(t) {
+  const ms    = elapsed(t.createdAt);
+  const limit = LIMITS[t.prio];
+  const days  = Math.floor(ms / (24*60*60*1000));
+  const hours = Math.floor((ms % (24*60*60*1000)) / (60*60*1000));
+  if (days > 0)  return `${days}d ${hours}h sem concluir`;
+  if (hours > 0) return `${hours}h sem concluir`;
+  return 'aberta recentemente';
+}
+
+function limitLabel(prio) {
+  return { urgente: '1 dia', normal: '3 dias', depois: '7 dias' }[prio];
+}
+
+// ── FORM HTML ─────────────────────────
+const subcatPH = {
+  trabalho: 'ex: CRZLabs, PI Planning, CAPEX...',
+  saude:    'ex: Nutrição, Treino, Consulta...',
+  pessoal:  null
+};
+
+function formHTML(prefix) {
+  return `
+  <div class="section-title">Nova tarefa</div>
+
+  <div class="form-group" style="margin-top:12px">
+    <div class="form-label">Categoria</div>
+    <div class="cat-toggle">
+      <button class="cat-btn active" data-cat="trabalho" onclick="selectCat('trabalho','${prefix}')"><span class="cat-dot"></span>Trabalho</button>
+      <button class="cat-btn"        data-cat="saude"    onclick="selectCat('saude','${prefix}')"><span class="cat-dot"></span>Saúde</button>
+      <button class="cat-btn"        data-cat="pessoal"  onclick="selectCat('pessoal','${prefix}')"><span class="cat-dot"></span>Pessoal</button>
+    </div>
+  </div>
+
+  <div class="form-group subcat-wrap" id="${prefix}SubcatWrap" style="margin-top:10px">
+    <div class="form-label" id="${prefix}SubcatLabel">Subcategoria de Trabalho</div>
+    <input type="text" id="${prefix}Subcat" placeholder="${subcatPH.trabalho}">
+  </div>
+
+  <div class="form-group" style="margin-top:10px">
+    <div class="form-label">Prioridade</div>
+    <div class="prio-toggle">
+      <button class="prio-btn active" data-prio="urgente" onclick="selectPrio('urgente','${prefix}')">Urgente</button>
+      <button class="prio-btn"        data-prio="normal"  onclick="selectPrio('normal','${prefix}')">Normal</button>
+      <button class="prio-btn"        data-prio="depois"  onclick="selectPrio('depois','${prefix}')">Depois</button>
+    </div>
+  </div>
+
+  <div class="form-group" style="margin-top:10px">
+    <div class="form-label">Título</div>
+    <input type="text" id="${prefix}Title" placeholder="O que precisa ser feito?" onkeydown="if(event.key==='Enter')addTask()">
+  </div>
+
+  <div class="form-group" style="margin-top:10px">
+    <div class="form-label">Detalhe (opcional)</div>
+    <textarea id="${prefix}Desc" placeholder="Contexto, links, observações..."></textarea>
+  </div>
+
+  <button class="btn-add" style="margin-top:12px" onclick="addTask()">Adicionar tarefa</button>
+
+  <div class="progress-wrap" style="margin-top:14px">
+    <div class="progress-label" id="${prefix}ProgressLabel">0 de 0 concluídas</div>
+    <div class="progress-bg"><div class="progress-fill" id="${prefix}ProgressFill" style="width:0%"></div></div>
+  </div>`;
+}
+
+document.getElementById('sidebarForm').innerHTML = formHTML('sb');
+document.getElementById('drawerForm').innerHTML  = formHTML('dr');
+
+// ── FORM INTERACTIONS ─────────────────
+function activePrefix() {
+  return window.innerWidth <= 680 ? 'dr' : 'sb';
+}
+
+function selectCat(cat, prefix) {
+  selCat = cat;
+  ['sb','dr'].forEach(p => {
+    document.querySelectorAll(`#${p === 'sb' ? 'sidebarForm' : 'drawerForm'} .cat-btn`).forEach(b => b.classList.remove('active'));
+    const btn = document.querySelector(`#${p === 'sb' ? 'sidebarForm' : 'drawerForm'} .cat-btn[data-cat="${cat}"]`);
+    if (btn) btn.classList.add('active');
+
+    const wrap  = document.getElementById(`${p}SubcatWrap`);
+    const input = document.getElementById(`${p}Subcat`);
+    const label = document.getElementById(`${p}SubcatLabel`);
+    const ph    = subcatPH[cat];
+
+    if (ph !== null) {
+      wrap.classList.remove('hidden');
+      input.placeholder = ph;
+      label.textContent = cat === 'trabalho' ? 'Subcategoria de Trabalho' : 'Subcategoria de Saúde';
+    } else {
+      wrap.classList.add('hidden');
+      input.value = '';
+    }
+  });
+}
+
+function selectPrio(prio, prefix) {
+  selPrio = prio;
+  ['sb','dr'].forEach(p => {
+    document.querySelectorAll(`#${p === 'sb' ? 'sidebarForm' : 'drawerForm'} .prio-btn`).forEach(b => b.classList.remove('active'));
+    const btn = document.querySelector(`#${p === 'sb' ? 'sidebarForm' : 'drawerForm'} .prio-btn[data-prio="${prio}"]`);
+    if (btn) btn.classList.add('active');
+  });
+}
+
+function setFilter(f) {
+  filter = f;
+  document.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'));
+  document.querySelector(`.filter-chip[data-filter="${f}"]`).classList.add('active');
+  render();
+}
+
+// ── DRAWER ────────────────────────────
+document.getElementById('fabBtn').addEventListener('click', () => {
+  document.getElementById('drawer').classList.add('open');
+  document.getElementById('drawerOverlay').classList.add('open');
+  document.getElementById('drawerOverlay').style.display = 'block';
+  setTimeout(() => document.getElementById('drTitle').focus(), 300);
+});
+
+function closeDrawer() {
+  document.getElementById('drawer').classList.remove('open');
+  document.getElementById('drawerOverlay').classList.remove('open');
+}
+
+// ── CRUD ──────────────────────────────
+function addTask() {
+  const p     = activePrefix();
+  const title = document.getElementById(`${p}Title`).value.trim();
+  if (!title) {
+    const el = document.getElementById(`${p}Title`);
+    el.focus();
+    el.style.borderColor = 'var(--urgente)';
+    setTimeout(() => el.style.borderColor = '', 1200);
+    return;
+  }
+  tasks.unshift({
+    id: Date.now(),
+    title,
+    desc:        document.getElementById(`${p}Desc`).value.trim(),
+    cat:         selCat,
+    subcat:      document.getElementById(`${p}Subcat`).value.trim() || null,
+    prio:        selPrio,
+    done:        false,
+    createdAt:   new Date().toISOString(),
+    completedAt: null
+  });
+  document.getElementById(`${p}Title`).value  = '';
+  document.getElementById(`${p}Desc`).value   = '';
+  document.getElementById(`${p}Subcat`).value = '';
+  closeDrawer();
+  save(); render();
+}
+
+function toggleDone(id) {
+  const t = tasks.find(t => t.id === id);
+  if (!t) return;
+  t.done = !t.done;
+  t.completedAt = t.done ? new Date().toISOString() : null;
+  save(); render();
+}
+
+function deleteTask(id) {
+  tasks = tasks.filter(t => t.id !== id);
+  save(); render();
+}
+
+function save() {
+  localStorage.setItem('agenda_v3', JSON.stringify(tasks));
+}
+
+// ── ICONS ─────────────────────────────
+const iCal   = `<svg width="10" height="10" viewBox="0 0 12 12" fill="none"><rect x="1" y="2" width="10" height="9" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M1 5h10" stroke="currentColor" stroke-width="1.2"/><path d="M4 1v2M8 1v2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>`;
+const iCheck = `<svg width="10" height="10" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.2"/><path d="M4 6l1.5 1.5L8 4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+const catLabel = { trabalho:'Trabalho', saude:'Saúde', pessoal:'Pessoal' };
+
+// ── CARD ──────────────────────────────
+function taskCard(t) {
+  const status = overdueStatus(t);
+  const cardCls = ['task-card', t.done ? 'done' : '', status || ''].filter(Boolean).join(' ');
+
+  let badge = '';
+  if (!t.done && status === 'overdue') {
+    badge = `<span class="overdue-badge red">${overdueLabel(t)}</span>`;
+  } else if (!t.done && status === 'warning') {
+    badge = `<span class="overdue-badge yellow">perto do limite (${limitLabel(t.prio)})</span>`;
+  }
+
+  return `<div class="${cardCls}" data-cat="${t.cat}">
+    <div class="task-check ${t.done ? 'checked' : ''}" onclick="toggleDone(${t.id})"></div>
+    <div class="task-body">
+      <div class="task-meta">
+        <span class="tag ${t.cat}">${catLabel[t.cat]}</span>
+        ${t.subcat ? `<span class="tag subcat">${escHtml(t.subcat)}</span>` : ''}
+        ${badge}
+      </div>
+      <div class="task-title">${escHtml(t.title)}</div>
+      ${t.desc ? `<div class="task-desc">${escHtml(t.desc)}</div>` : ''}
+      <div class="task-dates">
+        <span class="task-date">${iCal} Criada ${fmtDate(t.createdAt)}</span>
+        ${t.completedAt ? `<span class="task-date done-date">${iCheck} Concluída ${fmtDate(t.completedAt)}</span>` : ''}
+      </div>
+    </div>
+    <button class="task-delete" onclick="deleteTask(${t.id})" title="Remover">&#x2715;</button>
+  </div>`;
+}
+
+// ── ALERTS BANNER ─────────────────────
+function renderAlerts(visible) {
+  const container = document.getElementById('alertContainer');
+  const overdue  = visible.filter(t => overdueStatus(t) === 'overdue');
+  const warnings = visible.filter(t => overdueStatus(t) === 'warning');
+
+  let html = '';
+
+  if (overdue.length) {
+    const items = overdue.map(t =>
+      `<li>${escHtml(t.title)} <em style="opacity:.7">(${overdueLabel(t)})</em></li>`
+    ).join('');
+    html += `<div class="alert-banner overdue">
+      <div class="alert-icon">&#9888;</div>
+      <div class="alert-content">
+        <span class="alert-title">${overdue.length} tarefa${overdue.length>1?'s':''} fora do prazo</span>
+        <ul class="alert-list">${items}</ul>
+      </div>
+    </div>`;
+  }
+
+  if (warnings.length) {
+    const items = warnings.map(t =>
+      `<li>${escHtml(t.title)} <em style="opacity:.7">(limite: ${limitLabel(t.prio)})</em></li>`
+    ).join('');
+    html += `<div class="alert-banner warning">
+      <div class="alert-icon">&#8987;</div>
+      <div class="alert-content">
+        <span class="alert-title">${warnings.length} tarefa${warnings.length>1?'s':''} próxima${warnings.length>1?'s':''} do prazo</span>
+        <ul class="alert-list">${items}</ul>
+      </div>
+    </div>`;
+  }
+
+  container.innerHTML = html;
+}
+
+// ── RENDER ────────────────────────────
+function render() {
+  const container = document.getElementById('taskContainer');
+
+  let visible;
+  if      (filter === 'done')     visible = tasks.filter(t => t.done);
+  else if (filter === 'trabalho') visible = tasks.filter(t => t.cat === 'trabalho' && !t.done);
+  else if (filter === 'saude')    visible = tasks.filter(t => t.cat === 'saude'    && !t.done);
+  else if (filter === 'pessoal')  visible = tasks.filter(t => t.cat === 'pessoal'  && !t.done);
+  else if (filter === 'urgente')  visible = tasks.filter(t => t.prio === 'urgente' && !t.done);
+  else                            visible = tasks.filter(t => !t.done);
+
+  // Stats
+  const total   = tasks.length;
+  const done    = tasks.filter(t => t.done).length;
+  const pending = total - done;
+  document.getElementById('statPending').textContent = pending;
+  document.getElementById('statDone').textContent    = done;
+
+  ['sb','dr'].forEach(p => {
+    const lbl  = document.getElementById(`${p}ProgressLabel`);
+    const fill = document.getElementById(`${p}ProgressFill`);
+    if (lbl)  lbl.textContent    = `${done} de ${total} concluídas`;
+    if (fill) fill.style.width   = total ? `${(done/total)*100}%` : '0%';
+  });
+
+  // Alerts (only for non-done views)
+  if (filter !== 'done') {
+    renderAlerts(visible);
+  } else {
+    document.getElementById('alertContainer').innerHTML = '';
+  }
+
+  // Empty
+  if (!visible.length) {
+    container.innerHTML = `<div class="empty-state">
+      <div class="empty-icon">&#10003;</div>
+      <p>Nenhuma tarefa aqui.</p>
+    </div>`;
+    return;
+  }
+
+  if (filter === 'done') {
+    container.innerHTML = `<div class="task-list">${visible.map(taskCard).join('')}</div>`;
+    return;
+  }
+
+  const prioOrder = ['urgente','normal','depois'];
+  const prioLabel = { urgente:'Urgente', normal:'Normal', depois:'Depois' };
+  let html = '<div class="task-groups">';
+  prioOrder.forEach(prio => {
+    const group = visible.filter(t => t.prio === prio);
+    if (!group.length) return;
+    html += `<div>
+      <div class="group-label ${prio}">${prioLabel[prio]}</div>
+      <div class="task-list">${group.map(taskCard).join('')}</div>
+    </div>`;
+  });
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+// Re-check alerts every minute (cards may turn overdue while page is open)
+setInterval(render, 60 * 1000);
+
+// Init
+selectCat('trabalho', 'sb');
+render();
+</script>
+</body>
+</html>
