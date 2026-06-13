@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Controle de Gastos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #0F1117;
+    --surface:   #1A1D27;
+    --surface2:  #22263A;
+    --border:    #2D3150;
+    --green:     #10B981;
+    --green-dim: #064E3B;
+    --red:       #EF4444;
+    --red-dim:   #450A0A;
+    --amber:     #F59E0B;
+    --blue:      #3B82F6;
+    --purple:    #A855F7;
+    --pink:      #EC4899;
+    --orange:    #F97316;
+    --text:      #E2E8F0;
+    --text-muted:#94A3B8;
+    --text-faint:#4A5568;
+    --radius:    14px;
+    --radius-sm: 8px;
+  }
+
+  html { font-size: 13px; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding-bottom: 160px;
+  }
+
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 20px;
+    position: sticky; top: 0; z-index: 10;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .header-icon {
+    width: 36px; height: 36px;
+    background: var(--green); border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 17px; flex-shrink: 0;
+  }
+  header h1 { font-size: 1rem; font-weight: 700; letter-spacing: -0.01em; }
+  header p  { font-size: 0.7rem; color: var(--text-muted); margin-top: 1px; }
+
+  main {
+    max-width: 820px; margin: 0 auto;
+    padding: 20px 14px;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px;
+  }
+  .card-title {
+    font-size: 0.65rem; font-weight: 600;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--text-muted); margin-bottom: 14px;
+  }
+
+  /* TABS */
+  .tabs { display: flex; gap: 4px; margin-bottom: 16px; background: var(--surface2); border-radius: var(--radius-sm); padding: 3px; }
+  .tab-btn {
+    flex: 1; padding: 7px; border: none; border-radius: 6px;
+    background: none; color: var(--text-muted);
+    font-family: inherit; font-size: 0.78rem; font-weight: 600;
+    cursor: pointer; transition: all .15s;
+  }
+  .tab-btn.active { background: var(--surface); color: var(--text); }
+
+  /* FORM */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .form-grid .full { grid-column: 1 / -1; }
+
+  label {
+    display: block; font-size: 0.67rem; font-weight: 600;
+    color: var(--text-muted); margin-bottom: 5px;
+    letter-spacing: 0.04em; text-transform: uppercase;
+  }
+  input, select {
+    width: 100%; background: var(--surface2);
+    border: 1px solid var(--border); border-radius: var(--radius-sm);
+    color: var(--text); font-family: inherit; font-size: 0.88rem;
+    padding: 9px 12px; outline: none;
+    transition: border-color 0.15s;
+    -webkit-appearance: none; appearance: none;
+  }
+  input:focus, select:focus { border-color: var(--green); }
+  input[type="month"] { color-scheme: dark; }
+  input::placeholder { color: var(--text-faint); }
+  select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 12 12'%3E%3Cpath fill='%2394A3B8' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 10px center; padding-right: 30px;
+  }
+  select option { background: #22263A; }
+
+  .field-hint { font-size: 0.67rem; color: var(--text-faint); margin-top: 4px; line-height: 1.4; display: none; }
+  .field-hint.visible { display: block; }
+
+  .btn-primary {
+    width: 100%; padding: 11px;
+    background: var(--green); color: #fff; border: none;
+    border-radius: var(--radius-sm); font-family: inherit;
+    font-size: 0.88rem; font-weight: 700; cursor: pointer;
+    transition: opacity .15s, transform .1s;
+  }
+  .btn-primary:hover  { opacity: 0.88; }
+  .btn-primary:active { transform: scale(0.98); }
+
+  /* FILTRO MES */
+  .mes-filter { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .mes-btn {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 99px; color: var(--text-muted);
+    font-family: inherit; font-size: 0.72rem; font-weight: 600;
+    padding: 4px 12px; cursor: pointer;
+    transition: all .15s; white-space: nowrap;
+  }
+  .mes-btn:hover  { border-color: var(--green); color: var(--green); }
+  .mes-btn.active { background: var(--green); border-color: var(--green); color: #fff; }
+
+  /* CATEGORIAS */
+  .categories-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+  .cat-card {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 12px 14px;
+    position: relative; overflow: hidden;
+  }
+  .cat-card::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+    width: 3px; background: var(--cat-color, var(--text-muted));
+    border-radius: 4px 0 0 4px;
+  }
+  .cat-label {
+    display: flex; align-items: center; gap: 5px;
+    font-size: 0.68rem; font-weight: 600; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 5px;
+  }
+  .cat-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--cat-color, var(--text-muted)); flex-shrink: 0; }
+  .cat-value { font-size: 1.2rem; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+  .cat-value.credit { color: var(--green); }
+  .cat-count { font-size: 0.67rem; color: var(--text-faint); margin-top: 3px; }
+  .cat-bar-bg { margin-top: 8px; height: 3px; background: var(--border); border-radius: 99px; overflow: hidden; }
+  .cat-bar-fill { height: 100%; background: var(--cat-color, var(--text-muted)); border-radius: 99px; transition: width .5s ease; }
+
+  /* PREVISTOS LISTA */
+  .prev-list { display: flex; flex-direction: column; gap: 6px; }
+  .prev-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 12px; background: var(--surface2);
+    border: 1px dashed var(--border); border-radius: var(--radius-sm);
+  }
+  .prev-cat-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .prev-desc { flex: 1; min-width: 0; }
+  .prev-desc strong { display: block; font-size: 0.82rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .prev-desc span { font-size: 0.67rem; color: var(--text-muted); }
+  .prev-value { font-size: 0.88rem; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--amber); flex-shrink: 0; }
+  .prev-del {
+    background: none; border: none; color: var(--text-faint);
+    cursor: pointer; font-size: 0.9rem; padding: 3px 5px;
+    border-radius: 4px; transition: color .15s, background .15s;
+  }
+  .prev-del:hover { color: var(--red); background: var(--red-dim); }
+
+  /* LANCAMENTOS */
+  .entry-list { display: flex; flex-direction: column; gap: 7px; }
+  .entry-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; background: var(--surface2);
+    border: 1px solid var(--border); border-radius: var(--radius-sm);
+    animation: slideIn .22s ease;
+  }
+  .entry-item.editing { border-color: var(--green); flex-wrap: wrap; }
+  @keyframes slideIn { from { opacity:0; transform:translateY(-5px); } to { opacity:1; transform:translateY(0); } }
+  .entry-cat-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; align-self: flex-start; margin-top: 3px; }
+  .entry-desc { flex: 1; min-width: 0; }
+  .entry-desc strong { display: block; font-size: 0.82rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .entry-desc span { font-size: 0.67rem; color: var(--text-muted); }
+  .entry-value { font-size: 0.88rem; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--red); flex-shrink: 0; }
+  .entry-value.credit { color: var(--green); }
+  .entry-actions { display: flex; gap: 8px; flex-shrink: 0; }
+  .entry-btn {
+    background: var(--surface); border: 1px solid var(--border); color: var(--text-muted);
+    cursor: pointer; font-size: 1rem; line-height: 1;
+    width: 36px; height: 36px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 8px; transition: color .15s, background .15s, border-color .15s;
+    flex-shrink: 0;
+  }
+  .entry-btn.edit:hover   { color: var(--amber);     background: #F59E0B18; border-color: var(--amber); }
+  .entry-btn.del:hover    { color: var(--red);        background: var(--red-dim); border-color: var(--red); }
+  .entry-btn.save:hover   { color: var(--green);      background: var(--green-dim); border-color: var(--green); }
+  .entry-btn.cancel:hover { color: var(--text-muted); background: var(--surface); }
+
+  .edit-row { display: flex; gap: 7px; width: 100%; flex-wrap: wrap; margin-top: 4px; }
+  .edit-row input, .edit-row select { font-size: 0.8rem; padding: 6px 9px; }
+  .edit-desc  { flex: 2; min-width: 110px; }
+  .edit-valor { flex: 1; min-width: 85px; }
+  .edit-cat   { flex: 1.5; min-width: 110px; }
+
+  .empty-state { text-align: center; padding: 28px 0; color: var(--text-faint); font-size: 0.82rem; }
+  .empty-state div { font-size: 1.8rem; margin-bottom: 7px; }
+
+  .btn-clear {
+    background: none; border: 1px solid var(--border);
+    border-radius: var(--radius-sm); color: var(--text-muted);
+    font-family: inherit; font-size: 0.72rem; font-weight: 600;
+    cursor: pointer; padding: 5px 12px;
+    transition: border-color .15s, color .15s;
+  }
+  .btn-clear:hover { border-color: var(--red); color: var(--red); }
+
+  /* FOOTER */
+  .footer-bar {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: var(--surface); border-top: 1px solid var(--border);
+    padding: 12px 20px 18px; z-index: 20;
+  }
+  .footer-inner {
+    max-width: 820px; margin: 0 auto;
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 12px; flex-wrap: wrap;
+  }
+  .footer-col { display: flex; flex-direction: column; gap: 2px; }
+  .footer-label { font-size: 0.62rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--text-muted); }
+  .footer-total { font-size: 1.6rem; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -.03em; color: var(--green); line-height: 1; }
+  .footer-prev  { font-size: 0.88rem; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--amber); line-height: 1; }
+  .footer-count { font-size: 0.68rem; color: var(--text-muted); }
+  .footer-progress { width: 100%; display: flex; height: 5px; border-radius: 99px; overflow: hidden; gap: 1px; margin-top: 8px; }
+  .fp-seg { height: 100%; transition: flex .5s ease; min-width: 0; }
+
+  @media (max-width: 520px) {
+    html { font-size: 12px; }
+    .form-grid { grid-template-columns: 1fr; }
+    .form-grid .full { grid-column: 1; }
+    .footer-total { font-size: 1.3rem; }
+    .footer-bar { padding: 10px 14px 16px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-icon">💸</div>
+  <div>
+    <h1>Controle de Gastos</h1>
+    <p>Registre, categorize e acompanhe</p>
+  </div>
+</header>
+
+<main>
+
+  <!-- FORM LANCAMENTO -->
+  <div class="card">
+    <div class="tabs">
+      <button class="tab-btn active" id="tab-gasto"   onclick="switchTab('gasto')">Novo gasto</button>
+      <button class="tab-btn"        id="tab-previsto" onclick="switchTab('previsto')">Novo previsto</button>
+    </div>
+
+    <!-- GASTO -->
+    <div id="form-gasto">
+      <div class="form-grid">
+        <div class="full">
+          <label for="desc">Descrição <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-faint)">(opcional)</span></label>
+          <input type="text" id="desc" placeholder="Ex: Supermercado, Uber...">
+        </div>
+        <div>
+          <label for="valor">Valor (R$)</label>
+          <input type="number" id="valor" placeholder="0,00" step="0.01">
+          <div class="field-hint" id="paulo-hint-gasto">
+            Positivo = ele te deve &nbsp;|&nbsp; Negativo = você deve a ele
+          </div>
+        </div>
+        <div>
+          <label for="categoria">Categoria</label>
+          <select id="categoria" onchange="onCatChange()">
+            <option value="Alimentação">Alimentação</option>
+            <option value="Transporte">Transporte</option>
+            <option value="Moradia">Moradia</option>
+            <option value="Saúde">Saúde</option>
+            <option value="Lazer">Lazer</option>
+            <option value="Educação">Educação</option>
+            <option value="Assinaturas">Assinaturas</option>
+            <option value="Paulo">Paulo</option>
+            <option value="Outros">Outros</option>
+          </select>
+        </div>
+        <div>
+          <label for="pagamento">Forma de pagamento</label>
+          <select id="pagamento">
+            <option value="PIX">PIX</option>
+            <option value="Débito">Débito</option>
+            <option value="Crédito">Crédito</option>
+            <option value="Dinheiro">Dinheiro</option>
+          </select>
+        </div>
+        <div class="full">
+          <button class="btn-primary" onclick="addEntry()">Registrar gasto</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PREVISTO -->
+    <div id="form-previsto" style="display:none">
+      <div class="form-grid">
+        <div class="full">
+          <label for="prev-desc">Descrição</label>
+          <input type="text" id="prev-desc" placeholder="Ex: Aluguel, Streaming, Parcela...">
+        </div>
+        <div>
+          <label for="prev-valor">Valor (R$)</label>
+          <input type="number" id="prev-valor" placeholder="0,00" min="0" step="0.01">
+        </div>
+        <div>
+          <label for="prev-cat">Categoria</label>
+          <select id="prev-cat">
+            <option value="Alimentação">Alimentação</option>
+            <option value="Transporte">Transporte</option>
+            <option value="Moradia">Moradia</option>
+            <option value="Saúde">Saúde</option>
+            <option value="Lazer">Lazer</option>
+            <option value="Educação">Educação</option>
+            <option value="Assinaturas">Assinaturas</option>
+            <option value="Paulo">Paulo</option>
+            <option value="Outros">Outros</option>
+          </select>
+        </div>
+        <div>
+          <label for="prev-inicio">A partir de</label>
+          <input type="month" id="prev-inicio">
+        </div>
+        <div>
+          <label for="prev-fim">Até <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-faint)">(opcional)</span></label>
+          <input type="month" id="prev-fim">
+        </div>
+        <div class="full">
+          <button class="btn-primary" onclick="addPrevisto()">Salvar previsto recorrente</button>
+        </div>
+      </div>
+      <div style="margin-top:10px;font-size:0.67rem;color:var(--text-faint);line-height:1.5">
+        Aparece todo mês dentro do período definido. Sem data de fim, repete indefinidamente.
+      </div>
+    </div>
+  </div>
+
+  <!-- FILTRO MES -->
+  <div class="card">
+    <div class="card-title">Filtrar por mês</div>
+    <div class="mes-filter" id="mes-filter"></div>
+  </div>
+
+  <!-- PREVISTOS DO MES -->
+  <div class="card" id="card-previstos" style="display:none">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <div class="card-title" style="margin-bottom:0">Previstos do mês</div>
+      <span id="prev-total-label" style="font-size:0.72rem;font-weight:700;color:var(--amber)"></span>
+    </div>
+    <div class="prev-list" id="prev-list"></div>
+  </div>
+
+  <!-- CATEGORIAS -->
+  <div class="card">
+    <div class="card-title">Por categoria (realizados)</div>
+    <div class="categories-grid" id="cat-grid">
+      <div class="empty-state" style="grid-column:1/-1"><div>📊</div>Nenhum gasto registrado ainda.</div>
+    </div>
+  </div>
+
+  <!-- LANCAMENTOS -->
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <div class="card-title" style="margin-bottom:0">Lançamentos</div>
+      <button class="btn-clear" onclick="clearAll()">Limpar tudo</button>
+    </div>
+    <div class="entry-list" id="entry-list">
+      <div class="empty-state"><div>🗒️</div>Adicione seu primeiro gasto acima.</div>
+    </div>
+  </div>
+
+</main>
+
+<!-- FOOTER -->
+<div class="footer-bar">
+  <div class="footer-inner">
+    <div class="footer-col">
+      <div class="footer-label">Realizado <span id="footer-mes-label"></span></div>
+      <div class="footer-total" id="footer-total">R$ 0,00</div>
+      <div class="footer-count" id="footer-count">0 itens</div>
+    </div>
+    <div class="footer-col" id="footer-prev-col" style="text-align:right;display:none">
+      <div class="footer-label">Previsto no mês</div>
+      <div class="footer-prev" id="footer-prev">R$ 0,00</div>
+      <div class="footer-count" id="footer-prev-count"></div>
+    </div>
+  </div>
+  <div class="footer-inner" style="margin-top:0">
+    <div class="footer-progress" id="footer-progress"></div>
+  </div>
+</div>
+
+<script>
+const CAT_COLORS = {
+  "Alimentação": "#10B981",
+  "Transporte":  "#3B82F6",
+  "Moradia":     "#A855F7",
+  "Saúde":       "#F59E0B",
+  "Lazer":       "#EC4899",
+  "Educação":    "#06B6D4",
+  "Assinaturas": "#8B5CF6",
+  "Paulo":       "#F97316",
+  "Outros":      "#94A3B8",
+};
+const CATS  = Object.keys(CAT_COLORS);
+const MESES = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+
+let entries   = JSON.parse(localStorage.getItem('gastos_entries')   || '[]');
+let previstos = JSON.parse(localStorage.getItem('gastos_previstos') || '[]');
+let editingId = null;
+let mesFiltro = null;
+
+function save() {
+  localStorage.setItem('gastos_entries',   JSON.stringify(entries));
+  localStorage.setItem('gastos_previstos', JSON.stringify(previstos));
+}
+
+function fmt(v) {
+  const abs = Math.abs(v).toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  return (v < 0 ? '- R$ ' : 'R$ ') + abs;
+}
+
+function catOptions(selected) {
+  return CATS.map(c => `<option value="${c}"${c===selected?' selected':''}>${c}</option>`).join('');
+}
+
+// TABS
+function switchTab(tab) {
+  document.getElementById('form-gasto').style.display    = tab==='gasto'    ? '' : 'none';
+  document.getElementById('form-previsto').style.display = tab==='previsto' ? '' : 'none';
+  document.getElementById('tab-gasto').classList.toggle('active',    tab==='gasto');
+  document.getElementById('tab-previsto').classList.toggle('active', tab==='previsto');
+}
+
+// PAULO hint
+function onCatChange() {
+  const cat   = document.getElementById('categoria').value;
+  const hint  = document.getElementById('paulo-hint-gasto');
+  const valor = document.getElementById('valor');
+  hint.classList.toggle('visible', cat === 'Paulo');
+  if (cat === 'Paulo') { valor.removeAttribute('min'); }
+  else { valor.setAttribute('min','0'); if (parseFloat(valor.value) < 0) valor.value = ''; }
+}
+
+// ADD GASTO
+function addEntry() {
+  const desc  = document.getElementById('desc').value.trim();
+  const valor = parseFloat(document.getElementById('valor').value);
+  const cat   = document.getElementById('categoria').value;
+  const pag   = document.getElementById('pagamento').value;
+
+  if (isNaN(valor) || valor === 0) { highlight('valor'); return; }
+  if (cat !== 'Paulo' && valor < 0) { highlight('valor'); return; }
+
+  const now = new Date();
+  entries.unshift({ id: Date.now(), desc, valor, cat, pag,
+    date: now.toLocaleDateString('pt-BR'), mes: now.getMonth(), ano: now.getFullYear() });
+  save(); render();
+  document.getElementById('desc').value  = '';
+  document.getElementById('valor').value = '';
+  document.getElementById('desc').focus();
+}
+
+// ADD PREVISTO
+function addPrevisto() {
+  const desc   = document.getElementById('prev-desc').value.trim();
+  const valor  = parseFloat(document.getElementById('prev-valor').value);
+  const cat    = document.getElementById('prev-cat').value;
+  const inicio = document.getElementById('prev-inicio').value; // "YYYY-MM"
+  const fim    = document.getElementById('prev-fim').value;    // "YYYY-MM" ou ""
+
+  if (!desc)            { highlightEl('prev-desc');  return; }
+  if (!valor || valor<=0) { highlightEl('prev-valor'); return; }
+  if (!inicio)          { highlightEl('prev-inicio'); return; }
+  if (fim && fim < inicio) { highlightEl('prev-fim'); return; }
+
+  previstos.push({ id: Date.now(), desc, valor, cat, inicio, fim: fim || null });
+  save(); render();
+  document.getElementById('prev-desc').value  = '';
+  document.getElementById('prev-valor').value = '';
+  document.getElementById('prev-fim').value   = '';
+  document.getElementById('prev-desc').focus();
+}
+
+function deletePrevisto(id) {
+  previstos = previstos.filter(p => p.id !== id);
+  save(); render();
+}
+
+function highlight(id) {
+  const el = document.getElementById(id);
+  el.style.borderColor = '#EF4444'; el.focus();
+  setTimeout(() => el.style.borderColor = '', 1200);
+}
+function highlightEl(id) { highlight(id); }
+
+function deleteEntry(id) {
+  entries = entries.filter(e => e.id !== id);
+  if (editingId === id) editingId = null;
+  save(); render();
+}
+function startEdit(id) {
+  editingId = id; render();
+  const el = document.getElementById('edit-desc-'+id); if (el) el.focus();
+}
+function cancelEdit() { editingId = null; render(); }
+
+function saveEdit(id) {
+  const descEl  = document.getElementById('edit-desc-'+id);
+  const valorEl = document.getElementById('edit-valor-'+id);
+  const catEl   = document.getElementById('edit-cat-'+id);
+  const pagEl   = document.getElementById('edit-pag-'+id);
+  const desc  = descEl.value.trim();
+  const valor = parseFloat(valorEl.value);
+  const cat   = catEl.value;
+  const pag   = pagEl.value;
+  if (isNaN(valor)||valor===0) { valorEl.style.borderColor='#EF4444'; valorEl.focus(); setTimeout(()=>valorEl.style.borderColor='',1200); return; }
+  if (cat!=='Paulo'&&valor<0)  { valorEl.style.borderColor='#EF4444'; valorEl.focus(); setTimeout(()=>valorEl.style.borderColor='',1200); return; }
+  const entry = entries.find(e => e.id === id);
+  if (entry) { entry.desc = desc; entry.valor = valor; entry.cat = cat; entry.pag = pag; }
+  editingId = null; save(); render();
+}
+
+function clearAll() {
+  if (!entries.length) return;
+  if (!confirm('Apagar todos os lançamentos realizados?')) return;
+  entries = []; editingId = null; mesFiltro = null;
+  save(); render();
+}
+
+function setMes(key) { mesFiltro = mesFiltro===key ? null : key; render(); }
+function getMesKey(e) { return e.ano + '-' + String(e.mes).padStart(2,'0'); }
+
+function render() {
+  const now     = new Date();
+  const mesSet  = {};
+  entries.forEach(e => { const k = getMesKey(e); mesSet[k] = { mes: e.mes, ano: e.ano }; });
+  const mesKeys = Object.keys(mesSet).sort().reverse();
+
+  // FILTRO MES
+  const mesFilter = document.getElementById('mes-filter');
+  if (!mesKeys.length) {
+    mesFilter.innerHTML = '<span style="font-size:.75rem;color:var(--text-faint)">Nenhum lançamento ainda.</span>';
+  } else {
+    mesFilter.innerHTML =
+      `<button class="mes-btn${mesFiltro===null?' active':''}" onclick="setMes(null)">Todos</button>` +
+      mesKeys.map(k => {
+        const { mes, ano } = mesSet[k];
+        return `<button class="mes-btn${mesFiltro===k?' active':''}" onclick="setMes('${k}')">${MESES[mes]} ${ano}</button>`;
+      }).join('');
+  }
+
+  // Entradas filtradas
+  const filtered = mesFiltro ? entries.filter(e => getMesKey(e) === mesFiltro) : entries;
+  const total    = filtered.reduce((s, e) => s + e.valor, 0);
+
+  // por cat
+  const bycat = {};
+  filtered.forEach(e => {
+    if (!bycat[e.cat]) bycat[e.cat] = { sum: 0, absSum: 0, count: 0 };
+    bycat[e.cat].sum    += e.valor;
+    bycat[e.cat].absSum += Math.abs(e.valor);
+    bycat[e.cat].count  += 1;
+  });
+  const totalAbs = filtered.reduce((s, e) => s + Math.abs(e.valor), 0);
+
+  // PREVISTOS — filtra pelos ativos no mês selecionado (ou mês atual se "Todos")
+  const refMes = mesFiltro || (() => {
+    const n = new Date();
+    return n.getFullYear() + '-' + String(n.getMonth()+1).padStart(2,'0');
+  })();
+
+  function prevAtivoNoMes(p, mesKey) {
+    if (mesKey < p.inicio) return false;
+    if (p.fim && mesKey > p.fim) return false;
+    return true;
+  }
+
+  const prevAtivos = previstos.filter(p => prevAtivoNoMes(p, refMes));
+  const totalPrev  = prevAtivos.reduce((s, p) => s + p.valor, 0);
+  const cardPrev   = document.getElementById('card-previstos');
+  const prevList   = document.getElementById('prev-list');
+
+  function fmtMesKey(mk) {
+    if (!mk) return '';
+    const [ano, mes] = mk.split('-');
+    return MESES[parseInt(mes)-1] + '/' + ano;
+  }
+
+  if (previstos.length) {
+    cardPrev.style.display = '';
+    const refLabel = mesFiltro ? fmtMesKey(mesFiltro) : 'este mês';
+    document.getElementById('prev-total-label').textContent = 'Ativos em ' + refLabel + ': ' + fmt(totalPrev);
+    prevList.innerHTML = previstos.map(p => {
+      const color  = CAT_COLORS[p.cat] || '#94A3B8';
+      const ativo  = prevAtivoNoMes(p, refMes);
+      const periodoLabel = p.fim
+        ? fmtMesKey(p.inicio) + ' até ' + fmtMesKey(p.fim)
+        : 'a partir de ' + fmtMesKey(p.inicio);
+      return `
+        <div class="prev-item" style="${ativo?'':'opacity:0.45'}">
+          <span class="prev-cat-dot" style="background:${color}"></span>
+          <div class="prev-desc">
+            <strong>${p.desc}</strong>
+            <span>${p.cat} &middot; ${periodoLabel}${ativo?'':' &middot; inativo'}</span>
+          </div>
+          <span class="prev-value" style="${ativo?'':'color:var(--text-faint)'}">${fmt(p.valor)}</span>
+          <button class="prev-del" onclick="deletePrevisto(${p.id})" title="Remover">×</button>
+        </div>`;
+    }).join('');
+  } else {
+    cardPrev.style.display = 'none';
+  }
+
+  // GRID CATEGORIAS
+  const catGrid = document.getElementById('cat-grid');
+  if (!Object.keys(bycat).length) {
+    catGrid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div>📊</div>Nenhum gasto${mesFiltro?' neste mês':''} ainda.</div>`;
+  } else {
+    catGrid.innerHTML = Object.entries(bycat)
+      .sort((a, b) => b[1].absSum - a[1].absSum)
+      .map(([cat, data]) => {
+        const color = CAT_COLORS[cat] || '#94A3B8';
+        const pct   = totalAbs > 0 ? (data.absSum / totalAbs * 100).toFixed(1) : 0;
+        // Paulo: positivo = ele te deve (crédito seu), negativo = você deve a ele
+        const isCredit = cat === 'Paulo' ? data.sum > 0 : data.sum < 0;
+        const pauloNote = cat === 'Paulo'
+          ? `<div style="font-size:0.62rem;color:var(--text-faint);margin-top:2px">${data.sum > 0 ? 'ele te deve' : data.sum < 0 ? 'você deve a ele' : 'zerado'}</div>`
+          : '';
+        return `
+          <div class="cat-card" style="--cat-color:${color}">
+            <div class="cat-label"><span class="cat-dot"></span>${cat}</div>
+            <div class="cat-value${cat==='Paulo'&&data.sum>0?' credit':''}">${fmt(data.sum)}</div>
+            ${pauloNote}
+            <div class="cat-count">${data.count} lançamento${data.count!==1?'s':''} &middot; ${pct}%</div>
+            <div class="cat-bar-bg"><div class="cat-bar-fill" style="width:${pct}%"></div></div>
+          </div>`;
+      }).join('');
+  }
+
+  // LISTA
+  const list = document.getElementById('entry-list');
+  if (!filtered.length) {
+    list.innerHTML = `<div class="empty-state"><div>🗒️</div>${mesFiltro?'Nenhum lançamento neste mês.':'Adicione seu primeiro gasto acima.'}</div>`;
+  } else {
+    list.innerHTML = filtered.map(e => {
+      const color  = CAT_COLORS[e.cat] || '#94A3B8';
+      const isEdit = e.id === editingId;
+      // Paulo: positivo = ele te deve = verde; negativo = você deve = vermelho
+      const isCredit = e.cat === 'Paulo' ? e.valor > 0 : e.valor < 0;
+
+      if (isEdit) {
+        const pagOptions = ['PIX','Débito','Crédito','Dinheiro']
+          .map(p => `<option value="${p}"${(e.pag||'PIX')===p?' selected':''}>${p}</option>`).join('');
+        return `
+          <div class="entry-item editing">
+            <span class="entry-cat-dot" style="background:${color}"></span>
+            <div class="edit-row">
+              <input class="edit-desc"  id="edit-desc-${e.id}"  type="text"   value="${e.desc.replace(/"/g,'&quot;')}" placeholder="Descrição">
+              <input class="edit-valor" id="edit-valor-${e.id}" type="number" value="${e.valor}" ${e.cat==='Paulo'?'':'min="0"'} step="0.01" placeholder="Valor">
+              <select class="edit-cat"  id="edit-cat-${e.id}">${catOptions(e.cat)}</select>
+              <select class="edit-cat"  id="edit-pag-${e.id}">${pagOptions}</select>
+            </div>
+            <div class="entry-actions">
+              <button class="entry-btn save"   onclick="saveEdit(${e.id})"  title="Salvar">✓</button>
+              <button class="entry-btn cancel" onclick="cancelEdit()"        title="Cancelar">✕</button>
+            </div>
+          </div>`;
+      }
+
+      const pagBadge = e.pag ? `<span style="display:inline-block;font-size:0.6rem;font-weight:700;letter-spacing:0.04em;padding:1px 6px;border-radius:99px;background:var(--surface);border:1px solid var(--border);color:var(--text-muted);margin-left:4px;vertical-align:middle">${e.pag}</span>` : '';
+      return `
+        <div class="entry-item">
+          <span class="entry-cat-dot" style="background:${color}"></span>
+          <div class="entry-desc">
+            <strong>${e.desc || '<span style="color:var(--text-faint);font-weight:400;font-style:italic">sem descrição</span>'}${pagBadge}</strong>
+            <span>${e.cat} &middot; ${e.date}</span>
+          </div>
+          <span class="entry-value${isCredit?' credit':''}">${fmt(e.valor)}</span>
+          <div class="entry-actions">
+            <button class="entry-btn edit" onclick="startEdit(${e.id})"   title="Editar">✏</button>
+            <button class="entry-btn del"  onclick="deleteEntry(${e.id})" title="Remover">×</button>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  // FOOTER
+  const mesInfo  = mesFiltro ? mesSet[mesFiltro] : null;
+  const mesLabel = mesInfo ? MESES[mesInfo.mes] + ' ' + mesInfo.ano : '';
+  document.getElementById('footer-mes-label').textContent = mesLabel ? '— ' + mesLabel : '';
+  document.getElementById('footer-total').textContent     = fmt(total);
+  document.getElementById('footer-count').textContent     = filtered.length + ' ' + (filtered.length===1?'item':'itens');
+
+  // Previsto no footer
+  const fpCol = document.getElementById('footer-prev-col');
+  if (previstos.length) {
+    fpCol.style.display = '';
+    document.getElementById('footer-prev').textContent       = fmt(totalPrev);
+    document.getElementById('footer-prev-count').textContent = prevAtivos.length + ' previsto' + (prevAtivos.length!==1?'s':'') + ' ativos';
+  } else {
+    fpCol.style.display = 'none';
+  }
+
+  // BARRA
+  const prog = document.getElementById('footer-progress');
+  if (!totalAbs) {
+    prog.innerHTML = `<div class="fp-seg" style="background:var(--border);flex:1"></div>`;
+  } else {
+    prog.innerHTML = Object.entries(bycat)
+      .sort((a,b) => b[1].absSum - a[1].absSum)
+      .map(([cat, data]) => {
+        const color = CAT_COLORS[cat] || '#94A3B8';
+        return `<div class="fp-seg" style="background:${color};flex:${data.absSum}" title="${cat}: ${fmt(data.sum)}"></div>`;
+      }).join('');
+  }
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && ['desc','valor','categoria','prev-desc','prev-valor','prev-cat'].includes(e.target.id)) {
+    if (['prev-desc','prev-valor','prev-cat'].includes(e.target.id)) addPrevisto();
+    else addEntry();
+  }
+  if (e.key === 'Escape' && editingId !== null) cancelEdit();
+});
+
+// Preenche inicio com mês atual por padrão
+const _now = new Date();
+document.getElementById('prev-inicio').value =
+  _now.getFullYear() + '-' + String(_now.getMonth()+1).padStart(2,'0');
+
+render();
+</script>
+</body>
+</html>
